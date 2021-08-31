@@ -2,6 +2,7 @@ package com.example.myapplication
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -11,21 +12,36 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class MainActivity : AppCompatActivity() {
+
+    private val editId: EditText by lazy {
+        findViewById(R.id.editId)
+    }
+    private val editPassword: EditText by lazy {
+        findViewById(R.id.editPassword)
+    }
+    private val loginButton: Button by lazy {
+        findViewById(R.id.loginButton)
+    }
+    private val signButton: Button by lazy {
+        findViewById(R.id.signButton)
+    }
+    private var id: String? = null
+    private var password: String? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val editId: EditText = findViewById(R.id.editId)
-        val editPassword: EditText = findViewById(R.id.editPassword)
-        val loginButton: Button = findViewById(R.id.loginButton)
-        var id = editId.text.toString()
-        var password = editPassword.text.toString()
 
-        var data: MutableMap<String, String> = mutableMapOf()
-        data["email"]=id
-        data["nick"]=id
-        data["password"]=password
+        signButton.setOnClickListener {
+        }
         loginButton.setOnClickListener {
+            id=editId.text.toString()
+            password=editPassword.text.toString()
+
+            var data: MutableMap<String, String?> = mutableMapOf()
+            data.put("email", id)
+            data.put("nick", id)
+            data.put("password", password)
             RetrofitBuilder.retrofitService.joinUser(data)
                 .enqueue(object : Callback<UserResponse> {
                     override fun onResponse(
@@ -34,8 +50,11 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         if (response!!.isSuccessful) {
                             when (response!!.code()) {
-                                201 -> Toast.makeText(this@MainActivity, "성공", Toast.LENGTH_LONG)
-                                    .show()
+                                201 -> {
+                                    Toast.makeText(this@MainActivity, "성공", Toast.LENGTH_LONG)
+                                        .show()
+                                    Log.d("MainActivity", "${response.body().toString()}")
+                                }
                                 400 -> Toast.makeText(
                                     this@MainActivity,
                                     "이미 로그인 됨",
@@ -52,7 +71,9 @@ class MainActivity : AppCompatActivity() {
                             }
                         } else Toast.makeText(
                             this@MainActivity,
-                            "아예 실패 ${response.errorBody().toString()}",
+                            "아예 실패 ${
+                                response.errorBody().toString()
+                            } + ${response.code()} + ${data["email"]} + ${data["nick"]} +${data["password"]}",
                             Toast.LENGTH_LONG
                         )
                             .show()

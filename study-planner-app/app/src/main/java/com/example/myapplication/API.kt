@@ -13,6 +13,6 @@ interface API {
     @POST("/api/v1/auth/join")
     @FormUrlEncoded
     fun joinUser(
-        @FieldMap param : MutableMap<String,String>
+        @FieldMap param : MutableMap<String,String?>
     ): Call<UserResponse>
 }
