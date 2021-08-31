@@ -1,12 +1,14 @@
 package com.example.myapplication
 
-import androidx.appcompat.app.AppCompatActivity
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
-import com.example.myapplication.model.UserResponse
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
+import com.example.myapplication.model.UserLoginResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -25,61 +27,82 @@ class MainActivity : AppCompatActivity() {
     private val signButton: Button by lazy {
         findViewById(R.id.signButton)
     }
+
     private var id: String? = null
     private var password: String? = null
+    private var loginButtonOn: Boolean = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        initViews()
+    }
 
+    private fun initViews() {
+        initButton()
+        initEditText()
+    }
+
+    private fun initEditText() {
+        editId.addTextChangedListener {
+            id = editId.text.toString()
+            setLoginButton()
+        }
+        editPassword.addTextChangedListener {
+            password = editPassword.text.toString()
+            setLoginButton()
+        }
+    }
+
+    private fun setLoginButton() {
+        loginButtonOn = (!id.isNullOrEmpty() && !password.isNullOrEmpty())
+        loginButton.isEnabled = loginButtonOn
+    }
+
+    private fun initButton() {
         signButton.setOnClickListener {
+            startActivity(Intent(this, JoinActivity::class.java))
         }
         loginButton.setOnClickListener {
-            id=editId.text.toString()
-            password=editPassword.text.toString()
-
             var data: MutableMap<String, String?> = mutableMapOf()
-            data.put("email", id)
-            data.put("nick", id)
-            data.put("password", password)
-            RetrofitBuilder.retrofitService.joinUser(data)
-                .enqueue(object : Callback<UserResponse> {
+            data["email"]=id
+            data["password"]=password
+            Log.d("JoinActivity","${data["email"]} ${data["password"]}")
+            RetrofitBuilder.retrofitService.loginUser(data)
+                .enqueue(object : Callback<UserLoginResponse> {
                     override fun onResponse(
-                        call: Call<UserResponse>?,
-                        response: Response<UserResponse>?
+                        call: Call<UserLoginResponse>?,
+                        response: Response<UserLoginResponse>?
                     ) {
                         if (response!!.isSuccessful) {
                             when (response!!.code()) {
-                                201 -> {
-                                    Toast.makeText(this@MainActivity, "성공", Toast.LENGTH_LONG)
-                                        .show()
+                                200 -> {
+                                    Toast.makeText(this@MainActivity, "로그인 하셨습니다.", Toast.LENGTH_LONG).show()
                                     Log.d("MainActivity", "${response.body().toString()}")
                                 }
-                                400 -> Toast.makeText(
+                                401 -> Toast.makeText(
                                     this@MainActivity,
-                                    "이미 로그인 됨",
+                                    "로그인에 실패했습니다.",
                                     Toast.LENGTH_LONG
                                 )
                                     .show()
-                                422 -> Toast.makeText(this@MainActivity, "비번 틀림", Toast.LENGTH_LONG)
-                                    .show()
-                                else -> Toast.makeText(
-                                    this@MainActivity,
-                                    "이외의오류",
-                                    Toast.LENGTH_LONG
-                                ).show()
                             }
                         } else Toast.makeText(
                             this@MainActivity,
-                            "아예 실패 ${
-                                response.errorBody().toString()
-                            } + ${response.code()} + ${data["email"]} + ${data["nick"]} +${data["password"]}",
+                            "로그인에 실패했습니다.",
                             Toast.LENGTH_LONG
                         )
                             .show()
                     }
 
-                    override fun onFailure(call: Call<UserResponse>?, t: Throwable?) {
+                    override fun onFailure(call: Call<UserLoginResponse>?, t: Throwable?) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "응답에 실패했습니다 ${t.toString()}.",
+                            Toast.LENGTH_LONG
+                        )
+                            .show()
                     }
 
                 })
